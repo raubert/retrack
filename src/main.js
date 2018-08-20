@@ -6,11 +6,13 @@ import {
   MdCard,
   MdCheckbox,
   MdContent,
+  MdDialog,
   MdDivider,
   MdEmptyState,
   MdField,
   MdIcon,
   MdList,
+  MdMenu,
   MdProgress,
   MdRipple,
   MdTable,
@@ -28,11 +30,13 @@ Vue.use(MdButton)
 Vue.use(MdCard)
 Vue.use(MdCheckbox)
 Vue.use(MdContent)
+Vue.use(MdDialog)
 Vue.use(MdDivider)
 Vue.use(MdEmptyState)
 Vue.use(MdField)
 Vue.use(MdIcon)
 Vue.use(MdList)
+Vue.use(MdMenu)
 Vue.use(MdProgress)
 Vue.use(MdRipple)
 Vue.use(MdTable)

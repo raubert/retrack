@@ -41,6 +41,8 @@
           <app-results
             v-if="!searching && results && results.length"
             :results="results"
+            :labels="labels"
+            @download="download"
             class="results"
           ></app-results>
         </div>
@@ -68,8 +70,15 @@ export default {
     categories: false,
     selected: false,
     searching: false,
-    results: null
+    results: null,
+    labels: null,
+    nonce: null
   }),
+  props: {
+    jackett: {
+      default: () => JackettService
+    }
+  },
   computed: {
     empty() {
       if (this.error) {
@@ -100,9 +109,10 @@ export default {
   },
   methods: {
     fetchCategories() {
-      JackettService.categories(this).then((ret) => {
+      this.jackett.categories(this).then((ret) => {
         this.categories = ret.categories
         this.selected = this.categories[0]
+        this.labels = ret.labels
         this.initialized = true
       }).catch(() => {
         this.error = true
@@ -113,8 +123,12 @@ export default {
     },
     search(input, categories) {
       this.searching = true
-      JackettService.search(this, input, categories).then((ret) => {
+      this.jackett.search(this, input, categories).then((ret) => {
         this.results = ret && ret.results || []
+        this.results.forEach((result, index) => {
+          result.id = index + 1
+        })
+        this.nonce = ret && ret.nonce
         this.searching = false
         this.error = false
       }).catch(() => {
@@ -122,6 +136,9 @@ export default {
         this.searching = false
         this.error = true
       })
+    },
+    download(selected, label) {
+      this.jackett.download(this, this.nonce, selected, label)
     }
   },
   components: {
