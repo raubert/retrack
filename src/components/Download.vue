@@ -14,8 +14,8 @@
       </md-field>
     </md-dialog-content>
     <md-dialog-actions>
-      <md-button class="md-primary" @click="$emit('close')">Close</md-button>
-      <md-button class="md-primary" :disabled="!label" @click="$emit('download', label)">Download</md-button>
+      <md-button @click="$emit('close')">Close</md-button>
+      <md-button class="md-primary md-raised" :disabled="!label" @click="$emit('download', label)">Download</md-button>
     </md-dialog-actions>
   </md-dialog>
 </template>
@@ -35,7 +35,7 @@ export default {
       return this.selected.name
     },
     description() {
-      return this.selected.description && this.selected.description.replace(/<br>/g, '')
+      return this.selected.description && this.selected.description.replace(/(<([^>]+)>)/ig, '')
     }
   }
 }

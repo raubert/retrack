@@ -10,6 +10,9 @@
         <md-table-cell md-label="#">
           {{ item.id }}
         </md-table-cell>
+        <md-table-cell md-label="Free">
+          <md-icon v-if="item.free" class="md-accent">favorite</md-icon>
+        </md-table-cell>
         <md-table-cell md-label="Name">
           {{ item.name }}
         </md-table-cell>
@@ -32,13 +35,8 @@
 </template>
 
 <script>
-import * as moment from 'moment'
+import { size, date } from '@/services/utilities'
 import Download from '@/components/Download.vue'
-
-const K = {name: 'K', value: 1024}
-const M = {name: 'M', value: K.value * 1024}
-const G = {name: 'G', value: M.value * 1024}
-const units = [ K, M, G ]
 
 export default {
   data: () => ({
@@ -56,19 +54,8 @@ export default {
     }
   },
   methods: {
-    size(size) {
-      let ret = size
-      for (let i = units.length - 1; i >= 0; i--) {
-        if (size > units[i].value) {
-          ret = (size / units[i].value).toFixed(1) + units[i].name
-          break
-        }
-      }
-      return ret
-    },
-    date(date) {
-      return moment(new Date(date * 1000)).fromNow()
-    },
+    size,
+    date,
     select(item) {
       this.selected = item
       this.showDetails = true

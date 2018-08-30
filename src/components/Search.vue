@@ -1,6 +1,6 @@
 <template>
   <form novalidate class="md-layout" @submit.prevent="search">
-    <div class="md-layout md-gutter">
+    <div class="categories md-layout md-gutter">
       <div
         v-for="(value, key) in categories"
         :key="value"
@@ -49,6 +49,9 @@ export default {
 <style scoped>
   form {
     margin: 0 16px 16px 16px;
+  }
+  .md-layout-item {
+    flex: 0 0;
   }
   .md-toolbar {
     margin: 12px 0;

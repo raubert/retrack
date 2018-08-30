@@ -7,10 +7,12 @@
             <span class="md-title">retrack</span>
           </div>
 
-          <div class="md-toolbar-section-end">
-            <md-button class="md-icon-button">
-              <md-icon>more_vert</md-icon>
-            </md-button>
+          <div class="md-toolbar-section-end" v-if="torrents.length > 0">
+            <md-badge class="md-primary" :md-content="torrents.length">
+              <md-button class="md-icon-button" @click="dlVisible = !dlVisible">
+                <md-icon>cloud_download</md-icon>
+              </md-button>
+            </md-badge>
           </div>
         </div>
 
@@ -25,6 +27,26 @@
           </md-tabs>
         </div>
       </md-app-toolbar>
+
+      <md-app-drawer class="md-right" :md-active.sync="dlVisible">
+        <md-toolbar class="md-transparent" md-elevation="0">
+          <md-button class="md-icon-button md-dense" @click="dlVisible = false">
+            <md-icon>keyboard_arrow_right</md-icon>
+          </md-button>
+          <span class="md-title">Torrents</span>
+        </md-toolbar>
+        <md-list class="md-double-line">
+          <md-list-item v-for="torrent in torrents" :key="torrent.id">
+            <div class="md-list-item-text">
+              <span>
+                {{ torrent.name }}
+                <md-tooltip>{{ torrent.name }}</md-tooltip>
+              </span>
+              <span>{{ size(torrent.size) }} - added {{ date(torrent.added) }}</span>
+            </div>
+          </md-list-item>
+        </md-list>
+      </md-app-drawer>
 
       <md-app-content>
         <div v-if="initialized">
@@ -53,12 +75,18 @@
           :md-label="empty.label"
           :md-description="empty.description"
         ></md-empty-state>
+        <md-snackbar md-position="center" :md-active.sync="dlStatus.visible" md-persistent>
+          <span v-if="dlStatus.success">Torrent added successfully!</span>
+          <span v-else>An error occurred. {{ dlStatus.reason }}</span>
+          <md-button class="md-accent" @click="dlStatus.visible = false">Close</md-button>
+        </md-snackbar>
       </md-app-content>
     </md-app>
   </div>
 </template>
 
 <script>
+import { size, date } from '@/services/utilities'
 import JackettService from '@/services/jackett'
 import SearchComponent from '@/components/Search.vue';
 import ResultsComponent from '@/components/Results.vue';
@@ -72,7 +100,12 @@ export default {
     searching: false,
     results: null,
     labels: null,
-    nonce: null
+    nonce: null,
+    dlVisible: false,
+    torrents: [],
+    dlStatus: {
+      visible: false
+    }
   }),
   props: {
     jackett: {
@@ -105,11 +138,23 @@ export default {
     }
   },
   created() {
+    this.fetchInfo()
     this.fetchCategories()
   },
   methods: {
+    fetchInfo() {
+      return this.jackett.info().then((ret) => {
+        const torrents = []
+        ret.results.forEach((torrent) => {
+          if (ret.user === torrent.owner) {
+            torrents.push(torrent)
+          }
+        })
+        this.torrents = torrents
+      })
+    },
     fetchCategories() {
-      this.jackett.categories(this).then((ret) => {
+      return this.jackett.categories().then((ret) => {
         this.categories = ret.categories
         this.selected = this.categories[0]
         this.labels = ret.labels
@@ -123,7 +168,7 @@ export default {
     },
     search(input, categories) {
       this.searching = true
-      this.jackett.search(this, input, categories).then((ret) => {
+      return this.jackett.search(input, categories).then((ret) => {
         this.results = ret && ret.results || []
         this.results.forEach((result, index) => {
           result.id = index + 1
@@ -138,8 +183,15 @@ export default {
       })
     },
     download(selected, label) {
-      this.jackett.download(this, this.nonce, selected, label)
-    }
+      return this.jackett.download(this.nonce, selected, label).then((res) => {
+        this.dlStatus.success = res.status === 'success'
+        this.dlStatus.reason = res.message
+        this.dlStatus.visible = true
+        return this.fetchInfo()
+      })
+    },
+    size,
+    date
   },
   components: {
     'app-search': SearchComponent,
@@ -176,6 +228,9 @@ export default {
     /deep/ .md-active .md-button-content {
       color: var(--md-theme-default-accent-on-background, #64dd17);
     }
+  }
+  /deep/ .md-tabs.md-theme-default.md-primary .md-tabs-indicator {
+    background-color: var(--md-theme-default-accent-on-background, #64dd17);
   }
   .results {
     margin: 16px 0;

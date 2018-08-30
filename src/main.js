@@ -1,13 +1,14 @@
 import Vue from 'vue'
-import VueResource from 'vue-resource'
 import {
   MdApp,
+  MdBadge,
   MdButton,
   MdCard,
   MdCheckbox,
   MdContent,
   MdDialog,
   MdDivider,
+  MdDrawer,
   MdEmptyState,
   MdField,
   MdIcon,
@@ -15,6 +16,7 @@ import {
   MdMenu,
   MdProgress,
   MdRipple,
+  MdSnackbar,
   MdTable,
   MdTabs,
   MdToolbar,
@@ -24,14 +26,15 @@ import {
 // import router from '@/router'
 import App from '@/App.vue'
 
-Vue.use(VueResource)
 Vue.use(MdApp)
+Vue.use(MdBadge)
 Vue.use(MdButton)
 Vue.use(MdCard)
 Vue.use(MdCheckbox)
 Vue.use(MdContent)
 Vue.use(MdDialog)
 Vue.use(MdDivider)
+Vue.use(MdDrawer)
 Vue.use(MdEmptyState)
 Vue.use(MdField)
 Vue.use(MdIcon)
@@ -39,6 +42,7 @@ Vue.use(MdList)
 Vue.use(MdMenu)
 Vue.use(MdProgress)
 Vue.use(MdRipple)
+Vue.use(MdSnackbar)
 Vue.use(MdTable)
 Vue.use(MdTabs)
 Vue.use(MdToolbar)
@@ -51,6 +55,5 @@ import 'vue-material/dist/theme/black-green-light.css'
 import './styles.scss'
 
 new Vue({
-  // router,
   render: h => h(App)
 }).$mount('#app')
