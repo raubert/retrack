@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
    <md-app md-waterfall md-mode="fixed">
-      <md-app-toolbar class="md-dense md-primary" :class="{'md-large': !!categories}">
+      <md-app-toolbar class="md-dense md-primary">
         <div class="md-toolbar-row">
           <div class="md-toolbar-section-start">
             <span class="md-title">retrack</span>
@@ -15,61 +15,40 @@
             </md-badge>
           </div>
         </div>
-
-        <div class="md-toolbar-row" v-if="categories">
-          <md-tabs class="md-primary">
-            <md-tab
-              v-for="item in categories"
-              :key="item.name"
-              :md-label="item.name"
-              @click="selectCategory(item)"
-            ></md-tab>
-          </md-tabs>
-        </div>
       </md-app-toolbar>
 
-      <md-app-drawer class="md-right" :md-active.sync="dlVisible">
+      <md-app-drawer class="torrents md-right" :md-active.sync="dlVisible">
         <md-toolbar class="md-transparent" md-elevation="0">
           <md-button class="md-icon-button md-dense" @click="dlVisible = false">
             <md-icon>keyboard_arrow_right</md-icon>
           </md-button>
           <span class="md-title">Torrents</span>
         </md-toolbar>
-        <md-list class="md-double-line">
-          <md-list-item v-for="torrent in torrents" :key="torrent.id">
-            <div class="md-list-item-text">
-              <span>
-                {{ torrent.name }}
-                <md-tooltip>{{ torrent.name }}</md-tooltip>
-              </span>
-              <span>{{ size(torrent.size) }} - added {{ date(torrent.added) }}</span>
-            </div>
-          </md-list-item>
-        </md-list>
+        <app-torrents :torrents="torrents"></app-torrents>
       </md-app-drawer>
 
       <md-app-content>
-        <div v-if="initialized">
-          <app-search
-            :categories="selected.subcats"
-            @search="search"
-          ></app-search>
-          <div v-if="searching" class="spinner">
-            <md-progress-spinner
-              md-mode="indeterminate"
-              :md-diameter="100"
-            ></md-progress-spinner>
-          </div>
-          <app-results
-            v-if="!searching && results && results.length"
-            :results="results"
-            :labels="labels"
-            @download="download"
-            class="results"
-          ></app-results>
+        <app-search
+          v-if="initialized"
+          :trackers="trackers"
+          :categories="categories"
+          @search="search"
+        ></app-search>
+        <div v-if="!initialized || searching" class="spinner">
+          <md-progress-spinner
+            md-mode="indeterminate"
+            :md-diameter="100"
+          ></md-progress-spinner>
         </div>
+        <app-results
+          v-if="!searching && results && results.length"
+          :results="results"
+          :labels="labels"
+          @download="download"
+          class="results"
+        ></app-results>
         <md-empty-state
-          v-if="empty"
+          v-if="initialized && empty"
           :class="{searching: searching}"
           :md-icon="empty.icon"
           :md-label="empty.label"
@@ -86,15 +65,16 @@
 </template>
 
 <script>
-import { size, date } from '@/services/utilities'
 import JackettService from '@/services/jackett'
-import SearchComponent from '@/components/Search.vue';
-import ResultsComponent from '@/components/Results.vue';
+import TorrentsComponent from '@/components/Torrents.vue'
+import SearchComponent from '@/components/Search.vue'
+import ResultsComponent from '@/components/Results.vue'
 
 export default {
   data: () => ({
     initialized: false,
     error: false,
+    trackers: false,
     categories: false,
     selected: false,
     searching: false,
@@ -102,6 +82,7 @@ export default {
     labels: null,
     nonce: null,
     dlVisible: false,
+    dlFetch: null,
     torrents: [],
     dlStatus: {
       visible: false
@@ -137,9 +118,21 @@ export default {
       }
     }
   },
+  watch: {
+    dlVisible(newValue) {
+      if (newValue) {
+        this.fetchInfo()
+        this.dlFetch = setInterval(() => {
+          this.fetchInfo()
+        }, 5000)
+      } else {
+        clearInterval(this.dlFetch)
+      }
+    }
+  },
   created() {
     this.fetchInfo()
-    this.fetchCategories()
+    this.fetchMetadata()
   },
   methods: {
     fetchInfo() {
@@ -153,22 +146,24 @@ export default {
         this.torrents = torrents
       })
     },
-    fetchCategories() {
+    fetchMetadata() {
       return this.jackett.categories().then((ret) => {
+        this.trackers = ret.trackers
         this.categories = ret.categories
         this.selected = this.categories[0]
         this.labels = ret.labels
-        this.initialized = true
       }).catch(() => {
         this.error = true
+      }).then(() => {
+        this.initialized = true
       })
     },
     selectCategory(category) {
       this.selected = category
     },
-    search(input, categories) {
+    search(input, category, tracker) {
       this.searching = true
-      return this.jackett.search(input, categories).then((ret) => {
+      return this.jackett.search(input, category, tracker).then((ret) => {
         this.results = ret && ret.results || []
         this.results.forEach((result, index) => {
           result.id = index + 1
@@ -189,11 +184,10 @@ export default {
         this.dlStatus.visible = true
         return this.fetchInfo()
       })
-    },
-    size,
-    date
+    }
   },
   components: {
+    'app-torrents': TorrentsComponent,
     'app-search': SearchComponent,
     'app-results': ResultsComponent
   }
@@ -201,38 +195,31 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  .page-container, .md-app {
-    height: 100%;
+.page-container, .md-app {
+  height: 100%;
+}
+.spinner {
+  position: relative;
+  .md-progress-spinner {
+    position: absolute;
+    top: 5rem;
+    left: calc(50% - 50px);
   }
-  .spinner {
-    position: relative;
-    .md-progress-spinner {
-      position: absolute;
-      top: 5rem;
-      left: calc(50% - 50px);
-    }
+}
+.md-empty-state.searching {
+  visibility: hidden;
+}
+.results {
+  margin: 16px 0;
+  > /deep/ .md-table {
+    margin-right: 10px;
+    margin-left: 10px;
   }
-  .md-empty-state.searching {
-    visibility: hidden;
+}
+@media (max-width: 600px) {
+  .torrents {
+    max-width: 100%;
+    width: 100%;
   }
-  .md-layout-item {
-    margin: 1rem;
-  }
-  .md-layout-item:first-child {
-    margin-top: 0;
-  }
-  @media (max-width: 450px) {
-    /deep/ .md-tabs-navigation {
-      flex-wrap: wrap;
-    }
-    /deep/ .md-active .md-button-content {
-      color: var(--md-theme-default-accent-on-background, #64dd17);
-    }
-  }
-  /deep/ .md-tabs.md-theme-default.md-primary .md-tabs-indicator {
-    background-color: var(--md-theme-default-accent-on-background, #64dd17);
-  }
-  .results {
-    margin: 16px 0;
-  }
+}
 </style>

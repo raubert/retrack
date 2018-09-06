@@ -6,8 +6,8 @@
           <div class="md-title">{{ results && results.length }} Results</div>
         </div>
       </md-table-toolbar>
-      <md-table-row slot="md-table-row" slot-scope="{ item }" @click="select(item)">
-        <md-table-cell md-label="#">
+      <md-table-row slot="md-table-row" slot-scope="{ item }" :class="{'disabled': item.seeders === 0}" @click="select(item)">
+        <md-table-cell md-label="#" md-numeric>
           {{ item.id }}
         </md-table-cell>
         <md-table-cell md-label="Free">
@@ -16,12 +16,16 @@
         <md-table-cell md-label="Name">
           {{ item.name }}
         </md-table-cell>
+        <md-table-cell md-label="P / S" class="single-line">
+          {{ item.peers }} / {{ item.seeders }}
+          <md-tooltip>{{ item.peers }} peers and {{ item.seeders }} seeders</md-tooltip>
+        </md-table-cell>
         <md-table-cell md-label="Tracker">
           {{ item.tracker }}
-          <md-tooltip v-if="item.category" md-direction="bottom">{{ item.category.join(', ') }}</md-tooltip>
+          <md-tooltip v-if="item.category">{{ item.category.join(', ') }}</md-tooltip>
         </md-table-cell>
         <md-table-cell md-label="Size">{{ size(item.size) }}</md-table-cell>
-        <md-table-cell md-label="Release">{{ date(item.date) }}</md-table-cell>
+        <md-table-cell md-label="Released" class="single-line-lg">{{ date(item.date) }}</md-table-cell>
       </md-table-row>
     </md-table>
     <app-download
@@ -78,7 +82,17 @@ export default {
 .md-table-row {
   cursor: pointer;
 }
-
+.disabled {
+  opacity: .5;
+}
+.single-line /deep/ .md-table-cell-container {
+  white-space: nowrap;
+}
+@media (min-width: 1200px) {
+  .single-line-lg /deep/ .md-table-cell-container {
+    white-space: nowrap;
+  }
+}
 .description {
   white-space: pre-wrap;
 }

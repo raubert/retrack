@@ -19,3 +19,7 @@ export function size(size) {
 export function date(date) {
   return moment(new Date(date * 1000)).fromNow()
 }
+
+export function duration(duration) {
+  return moment(new Date() + (duration * 1000)).fromNow()
+}

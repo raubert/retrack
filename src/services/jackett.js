@@ -10,8 +10,15 @@ export default {
     return axios.get('/api/categories.php').then((resp) => resp.data)
   },
 
-  search(input, categories) {
-    return axios.post('/api/search.php', {q: input, cat: categories}).then((resp) => resp.data)
+  search(input, category, tracker) {
+    const params = {q: input}
+    if (category) {
+      params.cat = Object.values(category.subcats)
+    }
+    if (tracker) {
+      params.idx = tracker.id
+    }
+    return axios.post('/api/search.php', params).then((resp) => resp.data)
   },
 
   download(nonce, key, label) {

@@ -1,46 +1,80 @@
 <template>
-  <form novalidate class="md-layout" @submit.prevent="search">
-    <div class="categories md-layout md-gutter">
-      <div
-        v-for="(value, key) in categories"
-        :key="value"
-        class="md-layout-item md-medium-size-33 md-small-size-50 md-xsmall-size-100">
-        <md-checkbox v-model="checked" :value="value">{{ key }}</md-checkbox>
+  <form novalidate @submit.prevent="search">
+    <div  class="md-layout md-gutter">
+      <div class="md-layout-item">
+        <md-field>
+          <label for="categories">Category</label>
+          <md-select v-model="category" name="categories" id="categories">
+            <md-option value="ALL">All</md-option>
+            <md-option
+              v-for="item in categories"
+              :key="item.name"
+              :value="item.name"
+            >{{ item.name }}</md-option>
+          </md-select>
+        </md-field>
+      </div>
+      <div class="md-layout-item">
+        <md-field>
+          <label for="trackers">Tracker</label>
+          <md-select v-model="tracker" name="trackers" id="trackers">
+            <md-option value="ALL">All</md-option>
+            <md-option
+              v-for="item in trackers"
+              :key="item.id"
+              :value="item.id"
+            >{{ item.name }}</md-option>
+          </md-select>
+        </md-field>
       </div>
     </div>
-    <md-toolbar>
-      <md-field>
-        <label>Search</label>
-        <md-input v-model="input" autocomplete="off"></md-input>
-      </md-field>
-    </md-toolbar>
+    <div  class="md-layout md-gutter">
+      <div class="md-layout-item">
+        <md-toolbar>
+          <md-field>
+            <label>Search</label>
+            <md-input v-model="input" autocomplete="off" @keyup.enter="search"></md-input>
+          </md-field>
+        </md-toolbar>
+      </div>
+    </div>
   </form>
 </template>
 
 <script>
+const ALL = 'ALL'
+
 export default {
   name: 'search',
   data: () => ({
-    checked: [],
+    category: null,
+    tracker: null,
     input: ''
   }),
   props: {
-    categories: Object
-  },
-  watch: {
-    categories() {
-      this.reset()
-    }
+    categories: Array,
+    trackers: Array
   },
   created() {
     this.reset()
   },
   methods: {
     reset() {
-      this.checked = Object.values(this.categories)
+      this.category = ALL
+      this.tracker = ALL
+    },
+    find(what, as, where) {
+      for (let i = where.length - 1; i >= 0; i--) {
+        if (where[i][as] === what) {
+          return where[i]
+        }
+      }
+      return null
     },
     search() {
-      this.$emit('search', this.input, this.checked)
+      const category = this.find(this.category, 'name', this.categories)
+      const tracker = this.find(this.tracker, 'id', this.trackers)
+      this.$emit('search', this.input, category, tracker)
     }
   }
 }
@@ -48,10 +82,7 @@ export default {
 
 <style scoped>
   form {
-    margin: 0 16px 16px 16px;
-  }
-  .md-layout-item {
-    flex: 0 0;
+    padding: 0 10px;
   }
   .md-toolbar {
     margin: 12px 0;
